@@ -1,4 +1,4 @@
-package ch.zkb.pathfind;
+package ch.zkb.advent.pathfind;
 
 import lombok.Data;
 

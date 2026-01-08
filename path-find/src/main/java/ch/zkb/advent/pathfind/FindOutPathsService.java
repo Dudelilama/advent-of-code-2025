@@ -1,20 +1,20 @@
-package ch.zkb.pathfind;
+package ch.zkb.advent.pathfind;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
+import org.springframework.shell.standard.ShellComponent;
+import org.springframework.shell.standard.ShellMethod;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Service
+@ShellComponent
 @Slf4j
 public class FindOutPathsService {
 
@@ -23,6 +23,7 @@ public class FindOutPathsService {
 
     private final HashMap<String, Long> cache = new HashMap();
 
+    @ShellMethod(key = "11-print-pahts")
     public void printPaths() throws IOException {
         List<PathEntry> paths = readPathsFromFile(resourceFile.getFile());
 
@@ -81,30 +82,29 @@ public class FindOutPathsService {
     }
 
     private AtomicLong countOut(Stack<String> stack, HashMap<String, List<String>> pathsMap, String pathEnd) {
-        final var pathsCount  = new AtomicLong(0);
+        final var pathsCount = new AtomicLong(0);
         List<String> nextSteps = pathsMap.get(stack.getLast());
 
-        if(nextSteps == null) {
+        if (nextSteps == null) {
             return pathsCount;
         }
 
         nextSteps.forEach(nextStep -> {
-            if(stack.contains(nextStep)) {
+            if (stack.contains(nextStep)) {
                 log.warn("Found loop with next step {} in Path: {}", nextStep, stack);
                 return;
             }
             stack.push(nextStep);
             var cachedCount = cache.get(nextStep);
-            if(cachedCount == null) {
+            if (cachedCount == null) {
                 log.debug("Next step: {}", stack);
-                if(nextStep.equals(pathEnd)) {
+                if (nextStep.equals(pathEnd)) {
                     List<String> outPath = stack.stream().toList();
                     log.debug("{} Found out Path: {}", (int) pathsCount.incrementAndGet(), outPath);
                 } else {
                     log.debug("{} Recursion out: {}", (int) pathsCount.addAndGet(countOut(stack, pathsMap, pathEnd).get()), stack);
                 }
-            }
-            else {
+            } else {
                 log.debug("{} Cached out: {}", (int) pathsCount.addAndGet(cachedCount), stack);
             }
             stack.pop();
@@ -117,24 +117,23 @@ public class FindOutPathsService {
 
     private Set<List<String>> findOut(Stack<String> stack, HashMap<String, List<String>> pathsMap, @NotNull final Set<List<String>> paths, String pathEnd) {
         List<String> nextSteps = pathsMap.get(stack.getLast());
-        if(nextSteps == null || nextSteps.isEmpty()) {
+        if (nextSteps == null || nextSteps.isEmpty()) {
             return paths;
         }
 
         nextSteps.forEach(nextStep -> {
-            if(stack.contains(nextStep)) {
+            if (stack.contains(nextStep)) {
                 log.warn("Found loop with next step {} in Path: {}", nextStep, stack);
                 return;
             }
             stack.push(nextStep);
             log.debug("Next step: {}", stack);
-            if(nextStep.equals(pathEnd)) {
+            if (nextStep.equals(pathEnd)) {
                 List<String> outPath = stack.stream().toList();
-                if(paths.add(outPath)) {
+                if (paths.add(outPath)) {
                     log.info("{} Found out Path: {}", paths.size(), outPath);
                     log.debug("Out Paths: {}", paths);
-                }
-                else {
+                } else {
                     throw new IllegalStateException("Found duplicate out Path: " + outPath);
                 }
             } else {
